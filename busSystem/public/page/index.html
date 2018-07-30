@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>公交实时显示</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="../dist/css/bootstrap.css" />
+    <script src="../javascripts/jquery-3.1.1.min.js"></script>
+    <style>
+        .header{
+            height: 40px;
+            background: #00F5FF;
+        }
+        #busType{
+            border: #ffffff;
+            width: 20%;
+            float: left;
+            margin-left: 40%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <select id="busType">
+            <option>K1</option>
+            <option>K2</option>
+            <option>K3</option>
+        </select>
+    </header>
+    <canvas id="screen">
+    </canvas>
+</body>
+    <script>
+        CanvasRenderingContext2D.prototype.wrapText = function (text, x, y, maxWidth, lineHeight) {
+            if (typeof text != 'string' || typeof x != 'number' || typeof y != 'number') {
+                return;
+            }
+            
+            var context = this;
+            var canvas = context.canvas;
+            
+            if (typeof maxWidth == 'undefined') {
+                maxWidth = (canvas && canvas.width) || 300;
+            }
+            if (typeof lineHeight == 'undefined') {
+                lineHeight = (canvas && parseInt(window.getComputedStyle(canvas).lineHeight)) || parseInt(window.getComputedStyle(document.body).lineHeight);
+            }
+            
+            // 字符分隔为数组
+            var arrText = text.split('');
+            var line = '';
+            
+            for (var n = 0; n < arrText.length; n++) {
+                var testLine = line + arrText[n];
+                var metrics = context.measureText(testLine);
+                var testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = arrText[n];
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+        };
+        $(document).ready(function(){
+            var screenHeight = $(window).height();
+            var screenWidth = $(window).width()
+            var paddingLeft = screenWidth * 0.1;
+            var mire = (screenWidth - (2*paddingLeft))/5;
+            var r = screenWidth/90;
+            var wordx = (mire*3)/7;
+            var wordy = (mire*3)/8;            
+            //站点信息
+            var busStation = [
+            {id:1,stationName:"老山公交场站"},
+            {id:2,stationName:"老山南路东口站"},
+            {id:3,stationName:"地铁八宝山站"},
+            {id:4,stationName:"玉泉路口西站"},
+            {id:5,stationName:"永定路口东站"},
+            {id:6,stationName:"五棵松桥西站"},
+            {id:7,stationName:"7沙沟路口西站"},
+            {id:8,stationName:"东翠路口站"},
+            {id:9,stationName:"万寿路口西站"},
+            {id:10,stationName:"翠微路口站"},
+            {id:11,stationName:"公主坟站"},
+            {id:12,stationName:"军事博物馆站"},
+            {id:13,stationName:"木樨地西站"},
+            {id:14,stationName:"工会大楼站"},
+            {id:15,stationName:"南礼士路站"},
+            {id:16,stationName:"复兴门内站"},
+            {id:17,stationName:"西单路口东站"},
+            {id:18,stationName:"天安门西站"},
+            {id:19,stationName:"天安门东站"},
+            {id:20,stationName:"东单路口西站"},
+            {id:21,stationName:"北京站口东站"},
+            {id:22,stationName:"日坛路站"},
+            {id:23,stationName:"永安里路口西站"},
+            {id:24,stationName:"大北窑西站"},
+            {id:25,stationName:"大北窑东站"},
+            {id:26,stationName:"郎家园站"},
+            {id:27,stationName:"四惠枢纽站"},
+           ];
+
+            console.log("h:"+screenHeight+" "+"w:"+screenWidth);
+            //初始化canvas尺寸
+            var canvas = $('#screen');
+            var context = canvas[0].getContext('2d');
+            canvas[0].width = screenWidth;
+            canvas[0].height = screenHeight - 40;
+            function getAllBusStation(arr){
+                let busStationNumber = arr.length;
+                //先求出所有的点的坐标
+                var flag = true;
+                var count = 0;
+                var pointArr = [];
+                var x = 0;
+                var y = (mire*3)/2;
+                for(var i = 0 ;i < busStationNumber; i ++){
+                    var point = {}
+                    if(count < 5){
+                        if(flag){
+                            x += mire;
+                            y = y;
+                            point = {x:x,y:y}
+                            pointArr.push(point);
+                        }else{
+                            x -= mire;
+                            y = y;
+                            point = {x:x,y:y};
+                            pointArr.push(point);
+                        }
+                    }else{
+                        x = x;
+                        y += mire;
+                        point = {x:x,y:y};
+                        pointArr.push(point);
+                        count = 0;
+                        flag = !flag;
+                    }
+                    count ++;
+                }
+                return pointArr;
+            }
+            //绘制路线
+            function drawBusLine(arr){
+                context.strokeStyle = "#00F5FF";
+                context.lineWidth=4;
+                context.beginPath();
+                context.moveTo(arr[0].x, arr[0].y);
+                for(var i = 1;i < arr.length; i++){
+                    context.lineTo(arr[i].x, arr[i].y);
+                }
+                context.stroke();
+            }
+            //绘制公交站点   
+            function drawBusStation(arr){
+                context.strokeStyle = "#00F5FF";
+                context.beginPath();
+                context.fillStyle='#00F5FF'; 
+                context.arc(mire , (mire*3)/2, r, 0, Math.PI * 2, false);
+                context.stroke();
+                context.fill();
+                for(var i = 1;i < arr.length; i++){
+                    context.beginPath();
+                    context.arc(arr[i].x , arr[i].y, r, 0, Math.PI * 2, false);
+                    context.stroke();
+                    context.fill();
+                }
+                context.stroke();
+            }
+            //绘制站点文字
+            function drawBusStationName(busStation,busStationPointArr) {
+                context.beginPath();
+                context.fillStyle = '#333333';
+                context.font='10px sans-serif';
+                context.wrapText(busStation[0].stationName, (busStationPointArr[0].x)-wordx, (busStationPointArr[0].y)-wordy,40,10);
+                context.restore();                
+                console.log(busStationPointArr);
+                
+                for(var i = 1;i < busStationPointArr.length; i++){                    
+                    context.beginPath();                   
+                    context.wrapText(busStation[i].stationName, (busStationPointArr[i].x)-wordx, (busStationPointArr[i].y)-wordy,40,10);
+                    context.restore();
+                }
+                
+            }
+
+            function init(){
+                var busStationPointArr = getAllBusStation(busStation);
+                drawBusLine(busStationPointArr);
+                drawBusStation(busStationPointArr);
+                drawBusStationName(busStation,busStationPointArr);
+            }
+
+            init();
+            
+        })
+    </script>
+</html>
