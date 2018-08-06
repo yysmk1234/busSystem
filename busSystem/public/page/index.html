@@ -208,12 +208,47 @@
                     }
                 }
             }
+            //计算每一个站点的到站位置
+            function getStationArrivePoint(arr){
+                console.log("point:====",arr);
+                
+                var stationArrivePointArray = [];
+                for (var i = 0; i < arr.length; i++) {
+                    if((i-1)%5 == 0 && (i>1)){
+                        stationArrivePointArray.push({x:arr[i].x,y:arr[i].y-4});
+                    }else{
+                        stationArrivePointArray.push({x:arr[i].x-4,y:arr[i].y});
+                    }
+                }
+                return stationArrivePointArray;
+            }
+            //引入公交车图片
+            function drawBus(arr,index) {
+                var busIcon = new Image();
+                busIcon.onload = function drawBus() {
+                    context.drawImage(busIcon, arr[index].x-(mire/5), arr[index].y-(mire*2/5), mire*2/5, mire*2/5);              
+                }
+                busIcon.src = '../images/bus-icon.png';
+            }
+
             function init(){
-                var busStationPointArr = getAllBusStation(busStation);
-                drawBusLine(busStationPointArr);
-                drawBusStation(busStationPointArr);
-                drawBusStationName(busStation,busStationPointArr);
-                drawIsArrveStation(busStationPointArr,busStation);
+                var index = 0;
+                var timer = setInterval(function() {
+                    context.clearRect(0, 0, screenWidth*2, (screenHeight - 40)*2);
+                    
+                    var busStationPointArr = getAllBusStation(busStation);
+                    drawBusLine(busStationPointArr);
+                    drawBusStation(busStationPointArr);
+                    drawBusStationName(busStation,busStationPointArr);
+                    // drawIsArrveStation(busStationPointArr,busStation);
+                    drawBus(busStationPointArr,index);
+                    var stationArrivePointArr = getStationArrivePoint(busStationPointArr);
+                    index++;
+                    console.log(index);
+                    if(index == busStationPointArr.length){
+                        clearInterval(timer);
+                    }
+                },1000)
             }
 
             init();
